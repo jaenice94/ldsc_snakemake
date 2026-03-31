@@ -14,7 +14,7 @@ To run snakemake you will need a environment with snakemake installed
 conda env create -f workflow/envs/snakemake_env.yaml
 conda activate snakemake_env
 ```
-Obtain required files, you will need: #UPDATE links where to download them from
+Obtain required files, you will need: #can be found https://zenodo.org/records/10515792
 - 1000G_EUR_Phase3_plink
 - 1000G_Phase3_baselineLD_v2.2_ldscores
 - 1000G_Phase3_frq
