@@ -6,13 +6,10 @@ Clone this repository as well as the github directory for python 3.9 compatible 
 git clone https://github.com/jaenice94/ldsc_snakemake.git
 cd ldsc_snakemake
 git clone -b ldsc39 https://github.com/CBIIT/ldsc.git
-```
-I ran into one issue with ldsc.py - see here on how to fix it: https://github.com/bulik/ldsc/issues/435 
+cd ldsc39/ldsc
 
-To run snakemake you will need a environment with snakemake installed
-```bash
-conda env create -f workflow/envs/snakemake_env.yaml
-conda activate snakemake_env
+mkdir -p required_files
+cd required_files
 ```
 Obtain required files, you will need: #can be found https://zenodo.org/records/10515792
 - 1000G_EUR_Phase3_plink
@@ -20,11 +17,17 @@ Obtain required files, you will need: #can be found https://zenodo.org/records/1
 - 1000G_Phase3_frq
 - 1000G_Phase3_weights_hm3_no_MHC
 - hg19_w_hm3.snplist
-- hg19_w_hm3_snpids.txt (a list of rsids generated from hg19_w_hm3.snplist) 
+- hg19_w_hm3_snpids.txt (a list of rsids generated from hg19_w_hm3.snplist)
 
 You will also need GWAS summary statistics. I processed them with https://github.com/jaenice94/prscs/tree/main/GWAS_standardisation prior to feeding them into the snakemake workflow. You will need to ensure the effect/non-effect alleles are assigned correctly. The files listed here are in hg19, so your GWAS will also need to be in hg19 or lifted to hg19. Analyses in hg38 will require different files. 
 
 You can either test your own annotations, these should be in .bed format in hg19, or use example bedfiles (e.g. obtained from https://github.com/nottalexi/VascEpigenDementia/tree/main/peaks/Consensus_peaks/H3K27Ac) 
+
+To run snakemake you will need a environment with snakemake installed
+```bash
+conda env create -f workflow/envs/snakemake_env.yaml
+conda activate snakemake_env
+```
 
 To test out if snakemake pipeline works, you can do a dry run:
 ```bash
@@ -40,4 +43,5 @@ sbatch submission_ldsc.sh
 
 A simple script for visualisation in form of a heatmap is provided under visualisation/heatmap.Rmd
 
+NOTE: I ran into one issue with ldsc.py - see here on how to fix it: https://github.com/bulik/ldsc/issues/435 
 
