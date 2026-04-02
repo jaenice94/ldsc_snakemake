@@ -21,17 +21,38 @@ Obtain required files, you will need: #can be found https://zenodo.org/records/1
 
 You will also need GWAS summary statistics. I processed them with https://github.com/jaenice94/prscs/tree/main/GWAS_standardisation prior to feeding them into the snakemake workflow. You will need to ensure the effect/non-effect alleles are assigned correctly. The files listed here are in hg19, so your GWAS will also need to be in hg19 or lifted to hg19. Analyses in hg38 will require different files. 
 
+#Example of a Mungesumstats formatted GWAS for input
+```bash
+zcat AD2019.GRCh37.munged.LDSC.tsv.gz | head
+SNP	CHR	BP	A1	A2	UNIQID.A1A2	Z	P	NSUM	N	DIRECTION	FRQ	BETA	SE
+rs12184267	1	715265	T	C	1:715265_T_C	2.12197306477	0.03384	359856	359856	??+?	0.0408069	0.0126426452822487	0.0059579668998386
+rs12184277	1	715367	G	A	1:715367_G_A	1.95791489337	0.05024	360230	360230	??+?	0.0410687	0.0116235111669331	0.00593667845639937
+```
+
+#Example of annotation file input
+```bash
+head peak_file.bed
+chr1	839101	839718
+chr1	845743	846345
+chr1	854989	855423
+chr1	856488	857088
+chr1	857457	857777
+chr1	858037	858781
+```
+
 You can either test your own annotations, these should be in .bed format in hg19, or use example bedfiles (e.g. obtained from https://github.com/nottalexi/VascEpigenDementia/tree/main/peaks/Consensus_peaks/H3K27Ac) 
 
 To run snakemake you will need a environment with snakemake installed
 ```bash
+cd ../../../ #return to pipeline main directory
+
 conda env create -f workflow/envs/snakemake_env.yaml
 conda activate snakemake_env
 ```
 
 To test out if snakemake pipeline works, you can do a dry run:
 ```bash
-snakemake -np #update to match configs in script
+snakemake -np 
 ```
 
 You can add the annotations you want to test and GWAS phenotypes you want to include similar to the provided example submission script. 
