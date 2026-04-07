@@ -40,7 +40,9 @@ chr1	857457	857777
 chr1	858037	858781
 ```
 
-You can either test your own annotations, these should be in .bed format in hg19, or use example bedfiles (e.g. obtained from https://github.com/nottalexi/VascEpigenDementia/tree/main/peaks/Consensus_peaks/H3K27Ac) 
+You can either test your own annotations, these should be in .bed format in hg19, or use example bedfiles (e.g. obtained from https://github.com/nottalexi/VascEpigenDementia/tree/main/peaks/Consensus_peaks/H3K27Ac)
+
+Converting_deg_to_bed.Rmd contains a basic script that I have used to annotate genes to chromosome:bp locations to covert them to a .bed file. 
 
 To run snakemake you will need a environment with snakemake installed
 ```bash
