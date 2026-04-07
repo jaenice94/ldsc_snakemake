@@ -1,0 +1,130 @@
+---
+title: "Visualising of single annotation LDSC results"
+output: html_notebook
+---
+Date: 07.04.2026
+
+```{r}
+library(tidyr)
+library(tidyverse)
+library(data.table)
+library(dbplyr)
+
+# Set working directory - where to save the results
+setwd("")
+
+# List all LDSC result files
+files <- list.files(pattern = "*.results$")
+
+# Cell types
+cell_types <- c(
+	"neun_resected_pm_hg19_all.breaking_peaks.v2",
+	"rfx4_resected_pm_hg19_all.breaking_peaks.v2",
+	"olig2_resected_pm_hg19_all.breaking_peaks.v2",
+	"pu1_resected_pm_hg19_all.breaking_peaks.v2"
+)
+
+
+
+# Read and extract relevant rows and metadata
+ldsc_summary <- list()
+
+for (file in files) {
+  df <- read_tsv(file, show_col_types = FALSE)
+
+  l2_1_row <- df %>% filter(Category == "L2_1")
+
+  # remove suffix
+  base_name <- str_remove(file, "_s_model\\.results$")
+
+  # split into disease and annotation at first "-"
+  disease <- str_extract(base_name, "^[^-]+")
+  annotation <- str_remove(base_name, "^[^-]+-")
+
+  l2_1_row <- l2_1_row %>%
+    mutate(
+      Disease = disease,
+      Annotation = annotation
+    )
+
+  ldsc_summary[[file]] <- l2_1_row
+}
+
+
+# Combine into dataframe
+ldsc_results <- bind_rows(ldsc_summary)
+
+
+#calculate p value (one-sided - positive enrichment only) for zscore
+ldsc_results$Coefficient_p <- pnorm(ldsc_results$`Coefficient_z-score`, lower.tail = FALSE)
+
+#correcting LDSC results by annotations tested - not by diseases included here 
+ldsc_results <- ldsc_results %>%
+  group_by(Disease) %>%
+  mutate(
+    Coefficient_p_FDR = p.adjust(Coefficient_p, method = "BH"),
+    Coefficient_p_BF = p.adjust(Coefficient_p, method = "bonferroni"),
+    transformed_p = -log10(Coefficient_p_FDR)
+  ) %>%
+  ungroup()
+
+ldsc_results$transformed_p[ldsc_results$`Coefficient_z-score` < 0] <- 0 #no negative z-scores
+
+ldsc_results$star_mark <- ""
+
+# FDR-based stars
+ldsc_results$star_mark[ldsc_results$Coefficient_p_FDR < 0.05] <- "*"
+ldsc_results$star_mark[ldsc_results$Coefficient_p_FDR < 0.01] <- "**"
+ldsc_results$star_mark[ldsc_results$Coefficient_p_FDR < 0.001] <- "***"
+
+# numeric matrix
+ldsc_mat <- ldsc_results %>%
+  select(Disease, Annotation, transformed_p) %>%
+  pivot_wider(names_from = Annotation, values_from = transformed_p, values_fill = 0) %>%
+  column_to_rownames("Disease") %>%
+  as.matrix()
+
+# star matrix with IDENTICAL structure
+star_matrix <- ldsc_results %>%
+  select(Disease, Annotation, star_mark) %>%
+  pivot_wider(names_from = Annotation, values_from = star_mark, values_fill = "") %>%
+  column_to_rownames("Disease") %>%
+  as.matrix()
+
+# check alignment
+identical(rownames(ldsc_mat), rownames(star_matrix))
+identical(colnames(ldsc_mat), colnames(star_matrix))
+```
+
+```{r}
+
+library(pheatmap)
+
+
+custom_colors <- colorRampPalette(c("#FFFFFF","#CEDAA4", "#C1D189", "#96A28F", "#354E28"))(10)
+
+y_min <- 0
+y_max <- 3
+
+breaks <- seq(y_min, y_max, length.out = length(custom_colors) + 1)
+
+heatmap <- pheatmap(ldsc_mat,
+         breaks=breaks,
+         color = custom_colors,
+         display_numbers = star_matrix,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         number_color = "black",
+         fontsize_number = 16,
+         fontsize_row = 10,
+         fontsize_col = 12,
+         main = "-log10(Coefficient p) (Stars = FDR. sig)",
+         border_color = "darkgrey",
+         show_rownames = TRUE,
+         cellwidth = 30,
+         cellheight = 30)
+
+pdf("heatmap.pdf")
+print(heatmap)
+dev.off()
+```
