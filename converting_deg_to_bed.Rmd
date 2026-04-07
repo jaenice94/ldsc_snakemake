@@ -1,0 +1,58 @@
+---
+title: "DEG to chr locations"
+output: html_notebook
+---
+Annotating genes to chr locations
+Date:07.04.2026
+
+```{r}
+library(data.table)
+library(dplyr)
+
+#using MAGMA gene locations in hg19 for annotation 
+gene_loc <- fread("~/tools/magma/required_files/NCBI37.3.gene.loc", col.names = c("NCBI", "chr", "start", "end", "dir", "SYMBOL"))
+
+annotate_loc <- function(df_comp,prefix,ncbi){
+  
+  gene_loc <- ncbi
+  
+  df_name <- paste0(prefix, df_comp, ".txt")
+  df <- fread(df_name, col.names = c("Gene", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue", "padj"))
+  
+  gene_loc_filtered <- gene_loc %>% filter (SYMBOL %in% df$Gene)
+  
+  df_annotated <- merge(df, gene_loc_filtered, by.x="Gene", by.y = "SYMBOL")
+  
+  df_annotated$extended_start
+  
+  #based on Finucane paper add +/- 100kb either side around gene body
+  df_annotated <- df_annotated %>%
+    mutate(
+      start_ext = start - 100000,
+      end_ext   = end + 100000
+    )
+  
+  bed <- df_annotated %>%
+    transmute(chr2 = paste0("chr",chr), start_ext = start_ext, end_ext = end_ext) 
+
+  
+  fwrite(bed,
+            file = paste0(prefix, df_comp, ".bed"),
+            sep = "\t",
+            row.names = FALSE,
+            col.names = FALSE,
+            quote = FALSE)
+}
+
+annotate_loc(df_comp = "test" , ncbi = gene_loc, prefix= "down_padj_")
+
+```
+
+#sort bed files in bash
+```{bash, eval = False}
+for f in *.bed; do
+  sort -k1,1 -k2,2n "$f" > "${f%.bed}.sorted.bed"
+done
+```
+
+GWAS have been already processed to LDSC format using Mungesumstats with this pipeline https://github.com/jaenice94/prscs/tree/main/GWAS_standardisation, LDSC additionally performs some formatting with mungestats.py 
